@@ -205,3 +205,39 @@ push --> workflows[Workflows]
   * [ ] Plan out how to move to cloud based airflow or Beam or similar ...
   * [ ] Monitoring and reporting (e.g. minutes used, what's failing etc)
     * [ ] Integrate into a user dashboard on datahub.io
+
+---
+
+# Spec for data structure (unfinished)
+
+Data in git has the following files:
+
+```
+datapackage.json
+.lfsinfo
+.gitattributes
+```
+
+`.gitattributes`
+
+```
+mybigdata.csv filter=lfs diff=lfs merge=lfs -text
+```
+
+---
+
+# CKAN specific reflections
+
+TODO
+
+
+```mermaid
+graph LR
+
+gitcli --> git
+cc[CKAN Classic] --> git
+xxx[...] --> git
+
+git --> eventhub
+eventhub --> searchstore
+```
