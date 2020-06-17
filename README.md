@@ -1,6 +1,6 @@
-A README-based demo of next generation, fully-git(hub) based DataHub. We intend this to be https://next.datahub.io/
+A next generation, fully-git(hub) based DataHub.
 
-To start with let's KISS: fully GitHub based so GitHub provides MetaStore + HubStore
+Git-based is definite. Initial KISS approach means going fully GitHub based so GitHub provides MetaStore *and* HubStore.
 
 Here's a walk through of the desired experience. We walk through 3 cases:
 
