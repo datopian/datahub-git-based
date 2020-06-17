@@ -1,4 +1,4 @@
-An experiment with a fully-git(hub) based DataHub. We hope this can become https://next.datahub.io/
+A README-based demo of next generation, fully-git(hub) based DataHub. We intend this to be https://next.datahub.io/
 
 To start with let's KISS: fully GitHub based so GitHub provides MetaStore + HubStore
 
@@ -118,7 +118,7 @@ https://giftless.datahub.io/s3/mybucket/
 ```
 :::
 
-## Pushing a Dataset
+## Push the Dataset
 
 ```console=
 $ git lfs track mybigdata.csv
@@ -127,46 +127,71 @@ $ git commit "My new dataset"
 $ git push https://github.com/myorg/my-dataset
 ```
 
----
+# API interaction
 
-# How does this work in the background (mixed case of some data in git, some cloud (via git-lfs))
+NB: these API examples are more based on classic DataHub API setup rather than pure git(hub) based. However, wanted to include them for reference and for the future.
 
-Say we have this as our structure:
+## Getting Started (as a client)
+
+You can access the Web API using any HTTP client, for example `curl`. 
+
+## Auth Token
+
+First, you must obtain a signed access token. For example, using a token signed by `ckanext-authz-service` and the CKAN 2.x API. In the following examples,  we'll assume this token is saved as `$API_TOKEN`.
+
+You will add to every request an authorization header like:
 
 ```
-# datapackage.json
+curl -H "Authorization: Bearer $API_TOKEN"
+```
+
+We will omit this header in the examples that follow for the sake of simplicity. But please add it back in.
+
+## Creating a dataset
+
+A basic sequence
+
+```
+# create your project myorg/mydataset
+curl -X POST https://datahub.io/api/projects/myorg%2Fmydataset
+
+# you have an empty dataset!
+curl -X GET https://myckan.org/api/projects/:id/dataset
 {
-  name: 'my-dataset',
-  resources: [
-    {
-      "name": "mydata",
-      "path": "mydata.csv"      # stored in the git repo using git protocol ...
-    },
-    {
-      "name": "mybigdata",
-      "path": "mybigdata.csv"   # pointer stored in the git repo using git-lfs protocol .
-                                # actual file in cloud storage    ..
-    },
-    {
-      "name": "myremotedata",
-      "path": "https://mysite.com/thedata.csv"  # stored online somewhere
-    }
-  ]
+  // TODO: is name without @ character
+  name: '@myorg/mydataset',
+  id: 'unique-identifier'
 }
 
-# mydata.csv
-A,B,C
-1,2,3
+curl -X PUT https://myckan.org/api/projects/:id/dataset
+{
+  'title': 'My new title'  
+}
 
-# mybigdata.csv - stored in cloud storage
-version https://git-lfs.github.com/spec/v1
-oid sha256:4d7a214614ab2935c943f9e0ff69d22eadbb8f32b1258daaa5e2ca24d17e2393
-size 12345
+curl -X GET https://myckan.org/api/projects/:id/dataset/revisions
 ```
 
-Then how would this show up ...
+Another way to push a file (not in LFS):
 
-# What is the plan?
+```
+curl -X PUT https://myckan.org/api/projects/:id/resources/data%2Fdata.csv -d @data.csv
+```
+
+The server will take care of adding some metadata to `datapackage.json` pointing to this file and saving this file to storage. 
+
+## Access a dataset that is owned by an org I'm a member of
+
+2. List the organizations by calling the org list endpoint in the "hub API"
+3. Pick an org I want to access
+4. List datasets owned by this org by calling the dataset search API endpoint
+5. Get an authz token to read the dataset and resources I want to access from the authz endpoint
+6. Get the selected dataset metadata from the metastore service (this is what *metastore-service* is about)
+7. Get the resources pointed out by this dataset from blob storage service (currently `giftless`)
+
+Ideally, over time, all of these endpoints will be behind the same API gateway, consume the same identity / authorization tokens, etc. 
+
+
+# What is the MVP plan?
 
 Outcome visioning: I can do either the paths above and view my dataset on next.datahub.io
 
@@ -205,39 +230,3 @@ push --> workflows[Workflows]
   * [ ] Plan out how to move to cloud based airflow or Beam or similar ...
   * [ ] Monitoring and reporting (e.g. minutes used, what's failing etc)
     * [ ] Integrate into a user dashboard on datahub.io
-
----
-
-# Spec for data structure (unfinished)
-
-Data in git has the following files:
-
-```
-datapackage.json
-.lfsinfo
-.gitattributes
-```
-
-`.gitattributes`
-
-```
-mybigdata.csv filter=lfs diff=lfs merge=lfs -text
-```
-
----
-
-# CKAN specific reflections
-
-TODO
-
-
-```mermaid
-graph LR
-
-gitcli --> git
-cc[CKAN Classic] --> git
-xxx[...] --> git
-
-git --> eventhub
-eventhub --> searchstore
-```
